@@ -23,14 +23,14 @@ jobs:
       uses: docker/login-action@v2
       with:
         registry: https://acrawwzg43ei25ai.azurecr.io/
-        username: ${{ secrets.AzureAppService_ContainerUsername_de75c2f6f55f43cb9f190b8f407bfb39 }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_9bdb847e4e91438aad9a7cca11e78c81 }}
+        username: ${{ secrets.AzureAppService_ContainerUsername_3089f92cfb4f4579a0bf7af4c3aa5272 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_bb964df327a94831b3476fdb204a2066 }}
 
     - name: Build and push container image to registry
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: acrawwzg43ei25ai.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_de75c2f6f55f43cb9f190b8f407bfb39 }}/test:${{ github.sha }}
+        tags: acrawwzg43ei25ai.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_3089f92cfb4f4579a0bf7af4c3aa5272 }}/test:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -47,5 +47,5 @@ jobs:
       with:
         app-name: 'app-minatsugo-bot'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_4dd70f04810b4b8298662c7dad8d5c86 }}
-        images: 'acrawwzg43ei25ai.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_de75c2f6f55f43cb9f190b8f407bfb39 }}/test:${{ github.sha }}'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_b0b8a403d6f342109adcd4854f00fa1f }}
+        images: 'acrawwzg43ei25ai.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_3089f92cfb4f4579a0bf7af4c3aa5272 }}/test:${{ github.sha }}'
