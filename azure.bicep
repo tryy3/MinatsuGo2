@@ -1,9 +1,13 @@
 @description('The location in which all resources should be deployed.')
 param location string = resourceGroup().location
 
+// @description('The Runtime stack of current web app')
+// param linuxFxVersion string = 'DOCKER|index.docker.io/appsvc/sample-hello-world'
+
 var appName = 'app-minatsugo-bot'
-var appServicePlanName = 'asp-${appName}${uniqueString(subscription().subscriptionId)}'
+var appServicePlanName = 'go-${appName}${uniqueString(subscription().subscriptionId)}'
 var appServiceManagedIdentityName = 'id-${appName}'
+var acrName = 'acr${uniqueString(subscription().subscriptionId)}'
 
 
 // Managed Identity for App Service
@@ -13,7 +17,7 @@ resource appServiceManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdenti
 }
 
 //App service plan
-resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: appServicePlanName
   location: location
   sku: {
@@ -22,38 +26,43 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   }
   properties: {
     zoneRedundant: false
+    reserved: true
   }
-  kind: 'app'
+  kind: 'linux'
 }
 
 // Web App
-resource webApp 'Microsoft.Web/sites@2022-09-01' = {
+resource webApp 'Microsoft.Web/sites@2023-01-01' = {
   name: appName
   location: location
-  kind: 'app'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${appServiceManagedIdentity.id}': {}
-    }
-  }
+  // identity: {
+  //   type: 'UserAssigned'
+  //   userAssignedIdentities: {
+  //     '${appServiceManagedIdentity.id}': {}
+  //   }
+  // }
   properties: {
     serverFarmId: appServicePlan.id
-    httpsOnly: false
-    hostNamesDisabled: false
     siteConfig: {
-      vnetRouteAllEnabled: false
-      http20Enabled: true
-      publicNetworkAccess: 'Enabled'
-      alwaysOn: true
+      // linuxFxVersion: 'DOCKER|index.docker.io/appsvc/sample-hello-world'
+      linuxFxVersion: 'DOCKER|index.docker.io/appsvc/sample-hello-world'
     }
   }
 }
 
-// App Settings
-resource appsettings 'Microsoft.Web/sites/config@2022-09-01' = {
-  name: 'appsettings'
-  parent: webApp
+resource acrResource 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
+  name: acrName
+  location: location
+  sku: {
+    name: 'Basic'
+  }
+  // identity: {
+  //   type: 'UserAssigned'
+  //   userAssignedIdentities: {
+  //     '${appServiceManagedIdentity.id}': {}
+  //   }
+  // }
   properties: {
+    adminUserEnabled: true
   }
 }
