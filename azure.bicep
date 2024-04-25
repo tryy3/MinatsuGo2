@@ -1,6 +1,9 @@
 @description('The location in which all resources should be deployed.')
 param location string = resourceGroup().location
 
+@description('The name of the resource group in which all resources should be deployed.')
+param servicePrincipalObjectId string = ''
+
 // @description('The Runtime stack of current web app')
 // param linuxFxVersion string = 'DOCKER|index.docker.io/appsvc/sample-hello-world'
 
@@ -8,6 +11,7 @@ var appName = 'app-minatsugo-bot'
 var appServicePlanName = 'go-${appName}${uniqueString(subscription().subscriptionId)}'
 var appServiceManagedIdentityName = 'id-${appName}'
 var acrName = 'acr${uniqueString(subscription().subscriptionId)}'
+var keyVaultName = 'kv-${appName}'
 
 
 // Managed Identity for App Service
@@ -64,5 +68,35 @@ resource acrResource 'Microsoft.ContainerRegistry/registries@2023-01-01-preview'
   // }
   properties: {
     adminUserEnabled: true
+  }
+}
+
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name: keyVaultName
+  location: location
+  properties: {
+    sku: {
+      family: 'A'
+      name: 'standard'
+    }
+    tenantId: subscription().tenantId
+    accessPolicies: [
+      {
+        tenantId: subscription().tenantId
+        objectId: appServiceManagedIdentity.properties.principalId
+        permissions: {
+          keys: ['get', 'list']
+          secrets: ['get', 'list']
+          certificates: ['get', 'list']
+        }
+      }
+      {
+        tenantId: subscription().tenantId
+        objectId: servicePrincipalObjectId
+        permissions: {
+          secrets: ['set']
+        }
+      }
+    ]
   }
 }
