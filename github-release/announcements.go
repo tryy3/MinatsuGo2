@@ -189,7 +189,8 @@ func newGitHubAuth() (*http.Client, error) {
 	}
 
 	log.Printf("Pulling credentials for GitHub App\n")
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appID, installationID, pemFile)
+	// itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appID, installationID, pemFile)
+	itr, err := ghinstallation.New(http.DefaultTransport, appID, installationID, []byte(pemFile))
 	if err != nil {
 		return nil, fmt.Errorf("error getting installation token: %w", err)
 	}
