@@ -29,5 +29,9 @@ jobs:
       uses: azure/cli@v2
       with:
         inlineScript: |
-          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "Test" --value "${{ secrets.TEST_SECRET }}"
-          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "Test1" --value "${{ secrets.TEST_SECRET }}"
+          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "GithubAppID" --value "${{ secrets.APP_ID }}"
+          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "GithubInstallationID" --value "${{ secrets.APP_INSTALLATION_ID }}"
+          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "GithubAppPemFile" --value "${{ secrets.APP_PEM_FILE }}"
+          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "SupabaseEndpoint" --value "${{ secrets.SUPABASE_ENDPOINT }}"
+          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "SupabaseAPIKey" --value "${{ secrets.SUPABASE_API_KEY }}"
+          az keyvault secret set --vault-name kv-app-minatsugo-bot --name "DiscordToken" --value "${{ secrets.DISCORD_TOKEN }}"
