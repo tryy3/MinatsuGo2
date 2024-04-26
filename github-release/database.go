@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"time"
 
@@ -47,12 +46,12 @@ func (d *Database) GetEvent(id float64) (*EventRow, error) {
 }
 
 func NewDatabase(m *AnnouncementManager) (*Database, error) {
-	supabaseEndpoint := os.Getenv("SUPABASE_ENDPOINT")
+	supabaseEndpoint := getSecretData("SUPABASE_ENDPOINT")
 	if supabaseEndpoint == "" {
 		return nil, fmt.Errorf("SUPABASE_ENDPOINT environment variable is empty")
 	}
 
-	supabaseAPIKey := os.Getenv("SUPABASE_API_KEY")
+	supabaseAPIKey := getSecretData("SUPABASE_API_KEY")
 	if supabaseAPIKey == "" {
 		return nil, fmt.Errorf("SUPABASE_API_KEY environment variable is empty")
 	}
