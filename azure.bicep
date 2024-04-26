@@ -50,6 +50,9 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
     siteConfig: {
       // linuxFxVersion: 'DOCKER|index.docker.io/appsvc/sample-hello-world'
       linuxFxVersion: 'DOCKER|index.docker.io/appsvc/sample-hello-world'
+      appSettings: [
+        { name: 'VAULT_URL', value: keyVault.properties.vaultUri }
+      ]
     }
   }
 }
