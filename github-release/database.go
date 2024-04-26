@@ -66,7 +66,6 @@ func NewDatabase(m *AnnouncementManager) (*Database, error) {
 
 	// create client
 	c, err := realtimego.NewClient(supabaseEndpoint, supabaseAPIKey) // realtimego.WithUserToken(RLS_TOKEN),
-
 	if err != nil {
 		return nil, fmt.Errorf("error creating realtime client: %v", err)
 	}
