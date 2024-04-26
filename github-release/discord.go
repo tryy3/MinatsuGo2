@@ -26,7 +26,7 @@ func (discord *Discord) Close() {
 
 func NewDiscordSession() (*Discord, error) {
 	// phoneix realtime server endpoint
-	discordToken := getSecretData("DISCORD_TOKEN")
+	discordToken := getSecretData("DiscordToken")
 
 	s, err := discordgo.New("Bot " + discordToken)
 	if err != nil {

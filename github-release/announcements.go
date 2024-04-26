@@ -173,19 +173,19 @@ func (manager *AnnouncementManager) DatabaseUpdate(m realtimego.Message) {
 
 func newGitHubAuth() (*http.Client, error) {
 	// GitHub App installation
-	appID, err := strconv.ParseInt(getSecretData("APP_ID"), 10, 64)
+	appID, err := strconv.ParseInt(getSecretData("GithubAppID"), 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing APP_ID: %w", err)
+		return nil, fmt.Errorf("error parsing GithubAppID: %w", err)
 	}
 
-	installationID, err := strconv.ParseInt(getSecretData("APP_INSTALLATION_ID"), 10, 64)
+	installationID, err := strconv.ParseInt(getSecretData("GithubInstallationID"), 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing APP_INSTALLATION_ID: %w", err)
+		return nil, fmt.Errorf("error parsing GithubInstallationID: %w", err)
 	}
 
-	pemFile := getSecretData("APP_PEM_FILE")
+	pemFile := getSecretData("GithubAppPemFile")
 	if pemFile == "" {
-		return nil, fmt.Errorf("APP_PEM_FILE is empty")
+		return nil, fmt.Errorf("GithubAppPemFile is empty")
 	}
 
 	log.Printf("Pulling credentials for GitHub App\n")

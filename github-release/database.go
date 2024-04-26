@@ -46,14 +46,14 @@ func (d *Database) GetEvent(id float64) (*EventRow, error) {
 }
 
 func NewDatabase(m *AnnouncementManager) (*Database, error) {
-	supabaseEndpoint := getSecretData("SUPABASE_ENDPOINT")
+	supabaseEndpoint := getSecretData("SupabaseEndpoint")
 	if supabaseEndpoint == "" {
-		return nil, fmt.Errorf("SUPABASE_ENDPOINT environment variable is empty")
+		return nil, fmt.Errorf("SupabaseEndpoint environment variable is empty")
 	}
 
-	supabaseAPIKey := getSecretData("SUPABASE_API_KEY")
+	supabaseAPIKey := getSecretData("SupabaseAPIKey")
 	if supabaseAPIKey == "" {
-		return nil, fmt.Errorf("SUPABASE_API_KEY environment variable is empty")
+		return nil, fmt.Errorf("SupabaseAPIKey environment variable is empty")
 	}
 
 	client := postgrest.NewClient(fmt.Sprintf("https://%s/rest/v1", supabaseEndpoint), "", map[string]string{

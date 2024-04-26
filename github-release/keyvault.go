@@ -9,8 +9,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
 )
 
-var client azsecrets.Client
-
 func getSecretData(name string) string {
 	vaultURL := os.Getenv("VAULT_URL")
 
@@ -20,24 +18,15 @@ func getSecretData(name string) string {
 	}
 
 	client, err := azsecrets.NewClient(vaultURL, cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create a Key Vault client: %v", err)
+	}
 
 	version := ""
-	secret, err := client.GetSecret(context.TODO(), "mySecretName", version, nil)
+	secret, err := client.GetSecret(context.TODO(), name, version, nil)
 	if err != nil {
 		log.Fatalf("failed to get secret: %v", err)
 	}
 
-	// Establish a connection to the Key Vault client
-	// azsecrets.NewClient
-	// _, err = azsecrets.NewClient(vaultURL, cred, nil)
-	// if err != nil {
-	// 	log.Fatalf("failed to create a Key Vault client: %v", err)
-	// }
-
-	// basicClient := keyvault.New()
-	// basicClient.Authorizer = authorizer
-
-	// secret, err := basicClient.GetSecret(context.Background(), vaultURL, name, "")
-	// return os.Getenv(string(name))
 	return *secret.Value
 }
