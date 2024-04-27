@@ -135,7 +135,6 @@ func (manager *AnnouncementManager) GithubNewReleaseCommand(s *discordgo.Session
 
 func (manager *AnnouncementManager) DatabaseUpdate(m realtimego.Message) {
 	log.Printf("Topic: %s", m.Topic)
-	log.Printf("message: %+v\n", m)
 	if !strings.Contains(string(m.Topic), "events") {
 		return
 	}
@@ -143,6 +142,7 @@ func (manager *AnnouncementManager) DatabaseUpdate(m realtimego.Message) {
 	payload := m.Payload.(map[string]interface{})
 	record := payload["record"].(map[string]interface{})
 	eventName := record["event"].(string)
+	log.Printf("Event: %s", eventName)
 	if eventName != "release" {
 		return
 	}
@@ -159,7 +159,9 @@ func (manager *AnnouncementManager) DatabaseUpdate(m realtimego.Message) {
 
 	newReceivers := []*AnnouncementReceiver{}
 	for _, recv := range manager.receivers {
+		log.Printf("Receiver version: %v - Tag name: %v", recv.ReleaseVersion, tagName)
 		if recv.ReleaseVersion == tagName {
+			log.Printf("Sending message to %v", recv.ChannelID)
 			channel, err := manager.discord.session.UserChannelCreate(recv.ChannelID)
 			if err != nil {
 				log.Fatalf("error creating user channel: %v", err)
