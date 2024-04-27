@@ -3,6 +3,7 @@ package github_release
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -26,7 +27,7 @@ func (discord *Discord) Close() {
 
 func NewDiscordSession() (*Discord, error) {
 	// phoneix realtime server endpoint
-	discordToken := getSecretData("DiscordToken")
+	discordToken := os.Getenv("DISCORD_TOKEN")
 
 	s, err := discordgo.New("Bot " + discordToken)
 	if err != nil {

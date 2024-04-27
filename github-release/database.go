@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -46,14 +47,14 @@ func (d *Database) GetEvent(id float64) (*EventRow, error) {
 }
 
 func NewDatabase(m *AnnouncementManager) (*Database, error) {
-	supabaseEndpoint := getSecretData("SupabaseEndpoint")
+	supabaseEndpoint := os.Getenv("SUPABASE_ENDPOINT")
 	if supabaseEndpoint == "" {
-		return nil, fmt.Errorf("SupabaseEndpoint environment variable is empty")
+		return nil, fmt.Errorf("SUPABASE_ENDPOINT environment variable is empty")
 	}
 
-	supabaseAPIKey := getSecretData("SupabaseAPIKey")
+	supabaseAPIKey := os.Getenv("SUPABASE_API_KEY")
 	if supabaseAPIKey == "" {
-		return nil, fmt.Errorf("SupabaseAPIKey environment variable is empty")
+		return nil, fmt.Errorf("SUPABASE_API_KEY environment variable is empty")
 	}
 
 	client := postgrest.NewClient(fmt.Sprintf("https://%s/rest/v1", supabaseEndpoint), "", map[string]string{
@@ -66,6 +67,7 @@ func NewDatabase(m *AnnouncementManager) (*Database, error) {
 
 	// create client
 	c, err := realtimego.NewClient(supabaseEndpoint, supabaseAPIKey) // realtimego.WithUserToken(RLS_TOKEN),
+
 	if err != nil {
 		return nil, fmt.Errorf("error creating realtime client: %v", err)
 	}
