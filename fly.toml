@@ -1,0 +1,16 @@
+# fly.toml app configuration file generated for minatsugo on 2024-04-27T20:57:49+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'minatsugo'
+primary_region = 'arn'
+
+[build]
+  [build.args]
+    GO_VERSION = '1.21.5'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
