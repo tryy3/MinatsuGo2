@@ -57,7 +57,7 @@ func NewDatabase(m *AnnouncementManager) (*Database, error) {
 		return nil, fmt.Errorf("SUPABASE_API_KEY environment variable is empty")
 	}
 
-	client := postgrest.NewClient(fmt.Sprintf("https://%s/rest/v1", supabaseEndpoint), "", map[string]string{
+	client := postgrest.NewClient(fmt.Sprintf("%s/rest/v1", supabaseEndpoint), "", map[string]string{
 		"apikey":        supabaseAPIKey,
 		"Authorization": fmt.Sprintf("Bearer %s", supabaseAPIKey),
 	})
