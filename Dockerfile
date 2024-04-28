@@ -7,11 +7,17 @@ WORKDIR /src
 # Copy everything from the current directory to the Working Directory inside the container
 COPY . .
 
+# Download all dependencies. Dependencies are cached if the go.mod and go.sum files are not changed
+RUN go mod download
+
+# Verify dependencies
+RUN go mod verify
+
 # Build the Go app
 RUN go build -o main cmd/main.go
 
 # Run stage
-FROM gcr.io/distroless/base-debian10
+FROM gcr.io/distroless/base-debian12
 
 WORKDIR /app
 

@@ -1,6 +1,7 @@
 package github_release
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/bwmarrin/discordgo"
-	"github.com/patrickmn/go-cache"
+	"github.com/go-redis/cache/v9"
 	"github.com/shurcooL/githubv4"
 	realtimego "github.com/tryy3/realtime-go"
 )
@@ -22,15 +23,38 @@ type AnnouncementReceiver struct {
 }
 
 type AnnouncementManager struct {
-	receivers    []*AnnouncementReceiver // Direct PMs
+	// receivers    []*AnnouncementReceiver // Direct PMs
 	discord      *Discord
 	database     *Database
-	versionCache *cache.Cache
 	githubClient *githubv4.Client
+	cache        *cache.Cache
 }
 
-func (manager *AnnouncementManager) AddNewReceiver(recv *AnnouncementReceiver) {
-	manager.receivers = append(manager.receivers, recv)
+func (manager *AnnouncementManager) AddNewReceiver(recv *AnnouncementReceiver) error {
+	key := fmt.Sprintf("receivers-%s", recv.ReleaseVersion)
+
+	var existingReceivers []*AnnouncementReceiver
+	err := manager.cache.Get(context.Background(), key, &existingReceivers)
+	if err != nil && err != cache.ErrCacheMiss {
+		return fmt.Errorf("error getting receivers from cache: %w", err)
+	}
+
+	if existingReceivers == nil {
+		existingReceivers = []*AnnouncementReceiver{}
+	}
+
+	existingReceivers = append(existingReceivers, recv)
+
+	err = manager.cache.Set(&cache.Item{
+		Ctx:   context.Background(),
+		Key:   key,
+		Value: existingReceivers,
+		TTL:   time.Hour,
+	})
+	if err != nil {
+		return fmt.Errorf("error setting receivers in cache: %w", err)
+	}
+	return nil
 }
 
 func (manager *AnnouncementManager) Close() {
@@ -38,23 +62,36 @@ func (manager *AnnouncementManager) Close() {
 }
 
 func (manager *AnnouncementManager) getGithubVersions() []string {
-	list, found := manager.versionCache.Get("version")
-	if found {
-		log.Println("Version cache found")
-		return list.([]string)
+	var latestVersion []string
+	err := manager.cache.Get(context.Background(), "latestGithubVersion", &latestVersion)
+	if err != nil && err != cache.ErrCacheMiss {
+		log.Fatalf("error getting receivers from cache: %v", err)
 	}
-	log.Println("unable to find cache version")
 
-	// Retrieve a list of the last github version
+	if len(latestVersion) > 0 {
+		return latestVersion
+	}
 
 	semverVersion, err := getNextGithubReleaseVersion(manager.githubClient)
 	if err != nil {
 		log.Fatalf("error getting next github version %v", err)
 	}
 
-	newList := []string{semverVersion.String()}
-	manager.versionCache.Set("version", newList, cache.DefaultExpiration)
-	return newList
+	value := []string{semverVersion.String()}
+
+	err = manager.cache.Set(&cache.Item{
+		Ctx:   context.Background(),
+		Key:   "latestGithubVersion",
+		Value: value,
+		TTL:   time.Hour,
+	})
+
+	if err != nil {
+		log.Printf("error setting version in cache: %v", err)
+		return []string{}
+	}
+
+	return value
 }
 
 func (manager *AnnouncementManager) githubNewReleaseCommandHandler(s *discordgo.Session, i *discordgo.InteractionCreate) error {
@@ -85,7 +122,10 @@ func (manager *AnnouncementManager) githubNewReleaseCommandHandler(s *discordgo.
 		return fmt.Errorf("error creating new github release: %w", err)
 	}
 
-	manager.AddNewReceiver(&AnnouncementReceiver{ChannelID: userID, ReleaseVersion: version})
+	err = manager.AddNewReceiver(&AnnouncementReceiver{ChannelID: userID, ReleaseVersion: version})
+	if err != nil {
+		return fmt.Errorf("error adding new receiver: %w", err)
+	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -157,8 +197,13 @@ func (manager *AnnouncementManager) DatabaseUpdate(m realtimego.Message) {
 	tagName := event.RawData["release"].(map[string]interface{})["tag_name"].(string)
 	url := event.RawData["release"].(map[string]interface{})["html_url"].(string)
 
-	newReceivers := []*AnnouncementReceiver{}
-	for _, recv := range manager.receivers {
+	var newReceivers []*AnnouncementReceiver
+	err = manager.cache.Get(context.Background(), fmt.Sprintf("receivers-%s", tagName), &newReceivers)
+	if err != nil && err != cache.ErrCacheMiss {
+		log.Fatalf("error getting receivers from cache: %v", err)
+	}
+
+	for _, recv := range newReceivers {
 		log.Printf("Receiver version: %v - Tag name: %v", recv.ReleaseVersion, tagName)
 		if recv.ReleaseVersion == tagName {
 			log.Printf("Sending message to %v", recv.ChannelID)
@@ -167,11 +212,15 @@ func (manager *AnnouncementManager) DatabaseUpdate(m realtimego.Message) {
 				log.Fatalf("error creating user channel: %v", err)
 			}
 			manager.discord.session.ChannelMessageSend(channel.ID, fmt.Sprintf("The release %s is now ready to be edited. You can find it at %s", tagName, url))
-		} else {
-			newReceivers = append(newReceivers, recv)
 		}
 	}
-	manager.receivers = newReceivers
+
+	if len(newReceivers) > 0 {
+		err = manager.cache.Delete(context.Background(), fmt.Sprintf("receivers-%s", tagName))
+		if err != nil {
+			log.Fatalf("error deleting receivers from cache: %v", err)
+		}
+	}
 }
 
 func newGitHubAuth() (*http.Client, error) {
@@ -203,7 +252,12 @@ func newGitHubAuth() (*http.Client, error) {
 
 func NewAnnouncementManager() *AnnouncementManager {
 	manager := &AnnouncementManager{}
-	manager.versionCache = cache.New(1*time.Minute, 10*time.Minute)
+	// manager.versionCache = cache.New(1*time.Minute, 10*time.Minute)
+	cache, err := newRedisInstance()
+	if err != nil {
+		log.Fatalf("error initializing cache: %v", err)
+	}
+	manager.cache = cache
 
 	discordSession, err := NewDiscordSession()
 	if err != nil {
